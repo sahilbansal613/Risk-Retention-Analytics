@@ -1,0 +1,31 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load dataset
+data = pd.read_csv('user_data.csv')
+
+# Convert signup date to datetime
+data['signup_date'] = pd.to_datetime(data['signup_date'])
+
+# Cohort analysis: calculate retention
+data['cohort_month'] = data['signup_date'].dt.to_period('M')
+cohort_data = data.groupby(['cohort_month', 'month_active'])['user_id'].nunique().reset_index()
+
+# Pivot for retention table
+retention_table = cohort_data.pivot(index='cohort_month', columns='month_active', values='user_id')
+retention_table = retention_table.divide(retention_table.iloc[:,0], axis=0)
+
+# Plot retention heatmap
+plt.figure(figsize=(12,6))
+sns.heatmap(retention_table, annot=True, fmt=".0%", cmap="YlGnBu")
+plt.title("User Retention Cohort Analysis")
+plt.ylabel("Cohort Month")
+plt.xlabel("Month Active")
+plt.show()
+
+# Risk scoring example
+data['risk_score'] = np.where(data['engagement_score'] < 50, 'High Risk', 'Low Risk')
+risk_summary = data.groupby('risk_score')['user_id'].count()
+print(risk_summary)
